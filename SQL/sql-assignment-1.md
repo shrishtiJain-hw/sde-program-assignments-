@@ -15,26 +15,22 @@
 ```sql
 select distinct
 p.PARTY_ID,
-pe.FIRST_NAME,
-pe.LAST_NAME,
-cm.INFO_STRING as EMAIL,
+p.FIRST_NAME,
+p.LAST_NAME,
+email.INFO_STRING as EMAIL,
 tn.CONTACT_NUMBER as PHONE,
 p.CREATED_STAMP as ENTRY_DATE
-from party p
-join person pe
-    on pe.PARTY_ID = p.PARTY_ID
-join party_role pr
-    on pr.PARTY_ID = p.PARTY_ID
-   and pr.ROLE_TYPE_ID = 'CUSTOMER'
-left join party_contact_mech pcm
-    on pcm.PARTY_ID = p.PARTY_ID
-left join contact_mech cm
-    on cm.CONTACT_MECH_ID = pcm.CONTACT_MECH_ID
-   and cm.CONTACT_MECH_TYPE_ID = 'EMAIL_ADDRESS'
-left join telecom_number tn
-    on tn.CONTACT_MECH_ID = pcm.CONTACT_MECH_ID
-where p.CREATED_STAMP >= '2023-06-01'
-  and p.CREATED_STAMP < '2023-07-01';
+from person p
+join party_role pr on p.PARTY_ID = pr.PARTY_ID 
+and pr.ROLE_TYPE_ID = 'CUSTOMER'
+left join party_contact_mech pcm_email on p.PARTY_ID = pcm_email.PARTY_ID
+left join contact_mech email on pcm_email.CONTACT_MECH_ID = email.CONTACT_MECH_ID 
+and email.CONTACT_MECH_TYPE_ID = 'EMAIL_ADDRESS'
+left join party_contact_mech pcm_phone on p.PARTY_ID = pcm_phone.PARTY_ID
+left join telecom_number tn on pcm_phone.CONTACT_MECH_ID = tn.CONTACT_MECH_ID
+where p.CREATED_STAMP >= '2023-06-01' 
+and p.CREATED_STAMP < '2023-07-01';
+
 ```
 
 ---
