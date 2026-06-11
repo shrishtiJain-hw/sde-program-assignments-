@@ -13,7 +13,7 @@
 - `ENTRY_DATE`
 
 ```sql
-select
+select distinct
 p.PARTY_ID,
 pe.FIRST_NAME,
 pe.LAST_NAME,
