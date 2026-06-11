@@ -173,15 +173,15 @@ and oh.ORDER_DATE < '2023-09-01 00:00:00';
 - `SHOPIFY_ORDER_ID`
 
 ```sql
-select
-oh.ORDER_ID,
-oh.GRAND_TOTAL as TOTAL_AMOUNT,
-pm.PAYMENT_METHOD_TYPE_ID,
-oh.EXTERNAL_ID as SHOPIFY_ORDER_ID
-from order_header oh
-join order_payment_preference opp on oh.ORDER_ID = opp.ORDER_ID
-left join payment_method pm on opp.PAYMENT_METHOD_ID = pm.PAYMENT_METHOD_ID
-where oh.ORDER_TYPE_ID = 'SALES_ORDER';
+SELECT
+    oh.order_id AS ORDER_ID,
+    oh.grand_total AS TOTAL_AMOUNT,
+    opp.payment_method_type_id AS PAYMENT_METHOD,
+    oh.external_id AS `Shopify Order ID`
+FROM order_header oh
+LEFT JOIN order_payment_preference opp ON oh.order_id = opp.order_id
+WHERE oh.order_type_id = 'SALES_ORDER'
+ORDER BY oh.entry_date DESC;
 ```
 
 ---
