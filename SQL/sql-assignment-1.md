@@ -21,12 +21,20 @@ cm.INFO_STRING as EMAIL,
 tn.CONTACT_NUMBER as PHONE,
 p.CREATED_STAMP as ENTRY_DATE
 from party p
-join person pe on p.PARTY_ID = pe.PARTY_ID
-left join party_contact_mech pcm on p.PARTY_ID = pcm.PARTY_ID
-left join contact_mech cm on pcm.CONTACT_MECH_ID = cm.CONTACT_MECH_ID
-and cm.CONTACT_MECH_TYPE_ID = 'EMAIL_ADDRESS'
-left join telecom_number tn on pcm.CONTACT_MECH_ID = tn.CONTACT_MECH_ID
-where date(p.CREATED_STAMP) between '2023-06-01' and '2023-06-30';
+join person pe
+    on pe.PARTY_ID = p.PARTY_ID
+join party_role pr
+    on pr.PARTY_ID = p.PARTY_ID
+   and pr.ROLE_TYPE_ID = 'CUSTOMER'
+left join party_contact_mech pcm
+    on pcm.PARTY_ID = p.PARTY_ID
+left join contact_mech cm
+    on cm.CONTACT_MECH_ID = pcm.CONTACT_MECH_ID
+   and cm.CONTACT_MECH_TYPE_ID = 'EMAIL_ADDRESS'
+left join telecom_number tn
+    on tn.CONTACT_MECH_ID = pcm.CONTACT_MECH_ID
+where p.CREATED_STAMP >= '2023-06-01'
+  and p.CREATED_STAMP < '2023-07-01';
 ```
 
 ---
