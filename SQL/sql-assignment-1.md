@@ -177,7 +177,7 @@ SELECT
     oh.order_id AS ORDER_ID,
     oh.grand_total AS TOTAL_AMOUNT,
     opp.payment_method_type_id AS PAYMENT_METHOD,
-    oh.external_id AS Shopify_Order_ID
+    oh.external_id AS SHOPIFY_ORDER_ID
 FROM order_header oh
 LEFT JOIN order_payment_preference opp ON oh.order_id = opp.order_id
 WHERE oh.order_type_id = 'SALES_ORDER'
