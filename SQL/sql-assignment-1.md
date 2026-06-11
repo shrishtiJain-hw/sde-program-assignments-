@@ -197,17 +197,18 @@ ORDER BY oh.entry_date DESC;
 - `SHIPMENT_STATUS`
 
 ```sql
-select
-oh.ORDER_ID,
-oh.STATUS_ID as ORDER_STATUS,
-opp.STATUS_ID as PAYMENT_STATUS,
-ss.STATUS_ID as SHIPMENT_STATUS
-from order_header oh
-join order_payment_preference opp on oh.ORDER_ID = opp.ORDER_ID
-join order_shipment os on oh.ORDER_ID = os.ORDER_ID
-join shipment_status ss on os.SHIPMENT_ID = ss.SHIPMENT_ID
-where opp.STATUS_ID in ('PAYMENT_RECEIVED', 'PAYMENT_SETTLED')
-and ss.STATUS_ID not in ('SHIPMENT_SHIPPED', 'SHIPMENT_DELIVERED');
+SELECT
+    oh.ORDER_ID,
+    oh.STATUS_ID AS ORDER_STATUS,
+    opp.STATUS_ID AS PAYMENT_STATUS,
+    COALESCE(sh.STATUS_ID, 'NOT_SHIPPED') AS SHIPMENT_STATUS
+FROM order_header oh
+JOIN order_payment_preference opp ON oh.ORDER_ID = opp.ORDER_ID
+LEFT JOIN order_shipment os ON oh.ORDER_ID = os.ORDER_ID
+LEFT JOIN shipment sh ON os.SHIPMENT_ID = sh.SHIPMENT_ID
+WHERE opp.STATUS_ID IN ('PAYMENT_RECEIVED', 'PAYMENT_SETTLED')
+  AND (sh.STATUS_ID IS NULL
+    OR sh.STATUS_ID NOT IN ('SHIPMENT_SHIPPED', 'SHIPMENT_DELIVERED'));
 ```
 
 ---
