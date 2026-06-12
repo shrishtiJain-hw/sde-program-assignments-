@@ -134,32 +134,30 @@ group by p.PRODUCT_ID;
 - `SHIP_GROUP_SEQ_ID`
 
 ```sql
-SELECT 
-    oi.product_id, 
-    p.product_type_id, 
-    oh.product_store_id, 
-    oi.quantity AS total_quantity,
-    p.internal_name, 
-    oisg.facility_id, 
-    oh.external_id, 
-    f.facility_type_id, 
-    ohs.order_history_id,
-    oi.order_id, 
-    oi.order_item_seq_id, 
-    oisg.ship_group_seq_id
+SELECT
+    oi.PRODUCT_ID,
+    p.PRODUCT_TYPE_ID,
+    oh.PRODUCT_STORE_ID,
+    oi.QUANTITY AS TOTAL_QUANTITY,
+    p.INTERNAL_NAME,
+    oisg.FACILITY_ID,
+    oh.EXTERNAL_ID,
+    f.FACILITY_TYPE_ID,
+    os.ORDER_STATUS_ID AS ORDER_HISTORY_ID,
+    oh.ORDER_ID,
+    oi.ORDER_ITEM_SEQ_ID,
+    oisg.SHIP_GROUP_SEQ_ID
 FROM order_header oh
-JOIN order_status os ON oh.order_id = os.order_id 
-    AND os.status_id = 'ORDER_COMPLETED' 
-    AND os.status_datetime >= '2023-08-01 00:00:00' 
-    AND os.status_datetime < '2023-09-01 00:00:00'
-JOIN order_item oi ON oh.order_id = oi.order_id
-JOIN order_item_ship_group oisg ON oh.order_id = oisg.order_id 
-    AND oi.ship_group_seq_id = oisg.ship_group_seq_id
-LEFT JOIN facility f ON oisg.facility_id = f.facility_id
-JOIN product p ON oi.product_id = p.product_id
-LEFT JOIN order_history ohs ON oi.order_id = ohs.order_id 
-    AND oi.order_item_seq_id = ohs.order_item_seq_id 
-    AND ohs.ship_group_seq_id = oisg.ship_group_seq_id;
+JOIN order_item oi ON oh.ORDER_ID = oi.ORDER_ID
+JOIN order_item_ship_group oisg ON oh.ORDER_ID = oisg.ORDER_ID
+    AND oi.SHIP_GROUP_SEQ_ID = oisg.SHIP_GROUP_SEQ_ID
+JOIN product p ON oi.PRODUCT_ID = p.PRODUCT_ID
+LEFT JOIN facility f ON oisg.FACILITY_ID = f.FACILITY_ID
+JOIN order_status os ON oh.ORDER_ID = os.ORDER_ID
+    AND os.STATUS_ID = 'ORDER_COMPLETED'
+WHERE oh.ORDER_TYPE_ID = 'SALES_ORDER'
+  AND os.STATUS_DATETIME >= '2023-08-01 00:00:00'
+  AND os.STATUS_DATETIME < '2023-09-01 00:00:00';
 ```
 
 ---
