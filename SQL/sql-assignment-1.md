@@ -134,30 +134,32 @@ group by p.PRODUCT_ID;
 - `SHIP_GROUP_SEQ_ID`
 
 ```sql
-select
-oi.PRODUCT_ID,
-p.PRODUCT_TYPE_ID,
-oh.PRODUCT_STORE_ID,
-oi.QUANTITY as TOTAL_QUANTITY,
-p.INTERNAL_NAME,
-oisg.FACILITY_ID,
-oh.EXTERNAL_ID,
-f.FACILITY_TYPE_ID,
-os.ORDER_STATUS_ID as ORDER_HISTORY,
-oh.ORDER_ID,
-oi.ORDER_ITEM_SEQ_ID,
-oisg.SHIP_GROUP_SEQ_ID
-from order_header oh
-join order_item oi on oh.ORDER_ID = oi.ORDER_ID
-join order_item_ship_group oisg on oi.ORDER_ID = oisg.ORDER_ID
-and oi.SHIP_GROUP_SEQ_ID = oisg.SHIP_GROUP_SEQ_ID
-join product p on oi.PRODUCT_ID = p.PRODUCT_ID
-left join facility f on oisg.FACILITY_ID = f.FACILITY_ID
-left join order_status os on oh.ORDER_ID = os.ORDER_ID
-and os.STATUS_ID = 'ORDER_COMPLETED'
-where os.STATUS_ID = 'ORDER_COMPLETED'
-and oh.ORDER_DATE >= '2023-08-01 00:00:00'
-and oh.ORDER_DATE < '2023-09-01 00:00:00';
+SELECT 
+    oi.product_id, 
+    p.product_type_id, 
+    oh.product_store_id, 
+    oi.quantity AS total_quantity,
+    p.internal_name, 
+    oisg.facility_id, 
+    oh.external_id, 
+    f.facility_type_id, 
+    ohs.order_history_id,
+    oi.order_id, 
+    oi.order_item_seq_id, 
+    oisg.ship_group_seq_id
+FROM order_header oh
+JOIN order_status os ON oh.order_id = os.order_id 
+    AND os.status_id = 'ORDER_COMPLETED' 
+    AND os.status_datetime >= '2023-08-01 00:00:00' 
+    AND os.status_datetime < '2023-09-01 00:00:00'
+JOIN order_item oi ON oh.order_id = oi.order_id
+JOIN order_item_ship_group oisg ON oh.order_id = oisg.order_id 
+    AND oi.ship_group_seq_id = oisg.ship_group_seq_id
+LEFT JOIN facility f ON oisg.facility_id = f.facility_id
+JOIN product p ON oi.product_id = p.product_id
+LEFT JOIN order_history ohs ON oi.order_id = ohs.order_id 
+    AND oi.order_item_seq_id = ohs.order_item_seq_id 
+    AND ohs.ship_group_seq_id = oisg.ship_group_seq_id;
 ```
 
 ---
