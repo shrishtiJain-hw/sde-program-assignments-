@@ -90,22 +90,26 @@ where pa.STATE_PROVINCE_GEO_ID = 'NY';
 - `REVENUE`
 
 ```sql
-select
-oi.PRODUCT_ID,
-p.INTERNAL_NAME,
-sum(oi.QUANTITY) as TOTAL_QUANTITY_SOLD,
-sum(oi.QUANTITY * oi.UNIT_PRICE) as REVENUE
-from order_header oh
-join order_contact_mech ocm on oh.ORDER_ID = ocm.ORDER_ID
-and ocm.CONTACT_MECH_PURPOSE_TYPE_ID = 'SHIPPING_LOCATION'
-join postal_address pa on ocm.CONTACT_MECH_ID = pa.CONTACT_MECH_ID
-join order_item oi on oh.ORDER_ID = oi.ORDER_ID
-join product p on oi.PRODUCT_ID = p.PRODUCT_ID
-where pa.STATE_PROVINCE_GEO_ID = 'NY'
-group by
-oi.PRODUCT_ID,
-p.INTERNAL_NAME
-order by TOTAL_QUANTITY_SOLD desc;
+SELECT
+    oi.PRODUCT_ID,
+    p.INTERNAL_NAME,
+    SUM(oi.QUANTITY) AS TOTAL_QUANTITY_SOLD,
+    SUM(oi.QUANTITY * oi.UNIT_PRICE) AS REVENUE
+FROM order_header oh
+JOIN order_item oi ON oh.ORDER_ID = oi.ORDER_ID
+JOIN product p ON oi.PRODUCT_ID = p.PRODUCT_ID
+JOIN order_contact_mech ocm ON oh.ORDER_ID = ocm.ORDER_ID 
+    AND ocm.CONTACT_MECH_PURPOSE_TYPE_ID = 'SHIPPING_LOCATION'
+JOIN postal_address pa ON ocm.CONTACT_MECH_ID = pa.CONTACT_MECH_ID
+WHERE pa.STATE_PROVINCE_GEO_ID = 'NY'
+  AND oh.STATUS_ID = 'ORDER_COMPLETED' -- Filter out cancelled trash for accurate sales
+GROUP BY
+    oi.PRODUCT_ID,
+    p.INTERNAL_NAME
+ORDER BY 
+    TOTAL_QUANTITY_SOLD DESC, 
+    REVENUE DESC -- If there is a tie in quantity, product with higher revenue wins
+LIMIT 1;
 ```
 
 ---
