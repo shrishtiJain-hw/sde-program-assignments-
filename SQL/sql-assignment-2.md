@@ -102,13 +102,13 @@ JOIN order_contact_mech ocm ON oh.ORDER_ID = ocm.ORDER_ID
     AND ocm.CONTACT_MECH_PURPOSE_TYPE_ID = 'SHIPPING_LOCATION'
 JOIN postal_address pa ON ocm.CONTACT_MECH_ID = pa.CONTACT_MECH_ID
 WHERE pa.STATE_PROVINCE_GEO_ID = 'NY'
-  AND oh.STATUS_ID = 'ORDER_COMPLETED' -- Filter out cancelled trash for accurate sales
+  AND oh.STATUS_ID = 'ORDER_COMPLETED' 
 GROUP BY
     oi.PRODUCT_ID,
     p.INTERNAL_NAME
 ORDER BY 
     TOTAL_QUANTITY_SOLD DESC, 
-    REVENUE DESC -- If there is a tie in quantity, product with higher revenue wins
+    REVENUE DESC
 LIMIT 1;
 ```
 
