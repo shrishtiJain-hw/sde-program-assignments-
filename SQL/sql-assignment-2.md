@@ -268,14 +268,11 @@ WHERE oh.STATUS_ID NOT IN (
 - `DIFFERENCE`
 
 ```sql
-select
-PRODUCT_ID,
-FACILITY_ID,
-QUANTITY_ON_HAND as QOH,
-AVAILABLE_TO_PROMISE as ATP,
-(QUANTITY_ON_HAND - AVAILABLE_TO_PROMISE) as DIFFERENCE
-from inventory_item
-where QUANTITY_ON_HAND <> AVAILABLE_TO_PROMISE;
+SELECT product_id, facility_id, quantity_on_hand_total as QOH, available_to_promise_total as ATP,
+(quantity_on_hand_total - available_to_promise_total) as difference
+FROM inventory_item
+WHERE quantity_on_hand_total != available_to_promise_total;
+
 ```
 
 ---
