@@ -237,20 +237,20 @@ ORDER BY
 - `FACILITY_TYPE_ID`
 
 ```sql
-select distinct
-oh.ORDER_ID,
-oh.STATUS_ID as ORDER_STATUS,
-f.FACILITY_ID,
-f.FACILITY_NAME,
-f.FACILITY_TYPE_ID
-from order_header oh
-join order_item oi on oh.ORDER_ID = oi.ORDER_ID
-join order_item_ship_group oisg on oi.ORDER_ID = oisg.ORDER_ID
-and oi.SHIP_GROUP_SEQ_ID = oisg.SHIP_GROUP_SEQ_ID
-join facility f on oisg.FACILITY_ID = f.FACILITY_ID
-where oh.STATUS_ID in (
-'ORDER_CREATED',
-'ORDER_APPROVED'
+SELECT DISTINCT
+    oh.ORDER_ID,
+    oh.STATUS_ID AS ORDER_STATUS,
+    oisg.FACILITY_ID,
+    f.FACILITY_NAME,
+    f.FACILITY_TYPE_ID
+FROM order_header oh
+JOIN order_item_ship_group oisg
+    ON oh.ORDER_ID = oisg.ORDER_ID
+JOIN facility f
+    ON oisg.FACILITY_ID = f.FACILITY_ID
+WHERE oh.STATUS_ID NOT IN (
+    'ORDER_COMPLETED',
+    'ORDER_CANCELLED'
 );
 ```
 
