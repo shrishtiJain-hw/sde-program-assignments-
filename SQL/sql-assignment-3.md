@@ -236,6 +236,29 @@ order by TOTAL_ONE_DAY_SHIP_ORDERS desc;
 
 **Business Problem:** Warehouse managers need employee assignments for picking and packing operations.
 
+**Fields to Retrieve:**
+
+-`PARTY_ID (or Employee ID)`
+-`NAME (First/Last)`
+-`ROLE_TYPE_ID (e.g., “WAREHOUSE_PICKER”)`
+-`FACILITY_ID (assigned warehouse)`
+-`STATUS (active or inactive employee)`
+
+```sql
+SELECT
+    pr.PARTY_ID,
+    CONCAT(p.FIRST_NAME, ' ', p.LAST_NAME) AS NAME,
+    pr.ROLE_TYPE_ID,
+    fp.FACILITY_ID,
+    ps.STATUS_ID AS STATUS
+FROM party_role pr
+JOIN person p ON p.PARTY_ID = pr.PARTY_ID
+LEFT JOIN facility_party fp ON fp.PARTY_ID = pr.PARTY_ID
+LEFT JOIN party_status ps ON ps.PARTY_ID = pr.PARTY_ID
+WHERE pr.ROLE_TYPE_ID = 'WAREHOUSE_PICKER';
+
+```
+
 ---
 
 ## 9. Total Facilities That Sell the Product
