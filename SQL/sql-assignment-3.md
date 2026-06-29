@@ -233,7 +233,6 @@ select
 from shipment s
 join facility f on f.FACILITY_ID = s.ORIGIN_FACILITY_ID
 where timestampdiff(day, s.ESTIMATED_READY_DATE, s.ESTIMATED_SHIP_DATE) <= 1
-  -- Added actual filter for last month:
   and s.ESTIMATED_SHIP_DATE >= date_format(curdate() - interval 1 month, '%Y-%m-01')
   and s.ESTIMATED_SHIP_DATE < date_format(curdate(), '%Y-%m-01')
 group by
