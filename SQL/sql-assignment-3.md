@@ -36,7 +36,8 @@ join product p on p.PRODUCT_ID = oi.PRODUCT_ID
 join order_status os on os.ORDER_ID = oh.ORDER_ID
 where oh.ORDER_TYPE_ID = 'SALES_ORDER'
 and p.PRODUCT_TYPE_ID = 'FINISHED_GOOD'
-and os.STATUS_ID = 'ORDER_COMPLETED';
+and os.STATUS_ID = 'ORDER_COMPLETED'
+and oh.STATUS_ID = 'ORDER_COMPLETED';
 ```
 
 ---
@@ -71,7 +72,8 @@ from return_header rh
 join return_item ri on ri.RETURN_ID = rh.RETURN_ID
 join order_header oh on oh.ORDER_ID = ri.ORDER_ID
 join return_status rs on rs.RETURN_ID = rh.RETURN_ID
-where rs.STATUS_ID = 'RETURN_COMPLETED';
+where rs.STATUS_ID = 'RETURN_COMPLETED'
+and rs.RETURN_ITEM_SEQ_ID is null;
 ```
 
 ---
@@ -117,19 +119,24 @@ where orl.ROLE_TYPE_ID = 'PLACING_CUSTOMER';
 
 ```sql
 select
-(select sum(RETURN_QUANTITY)
-from return_item) as TOTAL_RETURNS,
+  (select coalesce(sum(ri.RETURN_QUANTITY), 0)
+   from return_item ri
+   join return_header rh on ri.RETURN_ID = rh.RETURN_ID
+   where rh.STATUS_ID = 'RETURN_COMPLETED') as TOTAL_RETURNS,
 
-(select sum(RETURN_QUANTITY * RETURN_PRICE)
-from return_item) as RETURN_DOLLAR_TOTAL,
+  (select coalesce(sum(ri.RETURN_QUANTITY * ri.RETURN_PRICE), 0)
+   from return_item ri
+   join return_header rh on ri.RETURN_ID = rh.RETURN_ID
+   where rh.STATUS_ID = 'RETURN_COMPLETED') as RETURN_DOLLAR_TOTAL,
 
-(select count(*)
-from return_adjustment
-where RETURN_ADJUSTMENT_TYPE_ID = 'APPEASEMENT') as TOTAL_APPEASEMENTS,
+  (select count(*)
+   from return_adjustment
+   where RETURN_ADJUSTMENT_TYPE_ID = 'APPEASEMENT') as TOTAL_APPEASEMENTS,
 
-(select sum(AMOUNT)
-from return_adjustment
-where RETURN_ADJUSTMENT_TYPE_ID = 'APPEASEMENT') as APPEASEMENTS_DOLLAR_TOTAL;
+  (select coalesce(sum(AMOUNT), 0)
+   from return_adjustment
+   where RETURN_ADJUSTMENT_TYPE_ID = 'APPEASEMENT') as APPEASEMENTS_DOLLAR_TOTAL;
+
 ```
 
 ---
@@ -151,18 +158,24 @@ where RETURN_ADJUSTMENT_TYPE_ID = 'APPEASEMENT') as APPEASEMENTS_DOLLAR_TOTAL;
 
 ```sql
 select
-rh.RETURN_ID,
-rh.ENTRY_DATE,
-ra.RETURN_ADJUSTMENT_TYPE_ID,
-ra.AMOUNT,
-ra.COMMENTS,
-ra.ORDER_ID,
-oh.ORDER_DATE,
-rh.RETURN_DATE,
-oh.PRODUCT_STORE_ID
+  rh.RETURN_ID,
+  rh.ENTRY_DATE,
+  ra.RETURN_ADJUSTMENT_TYPE_ID,
+  ra.AMOUNT,
+  ra.COMMENTS,
+  ro.ORDER_ID,
+  oh.ORDER_DATE,
+  rh.RETURN_DATE,
+  oh.PRODUCT_STORE_ID
 from return_header rh
-left join return_adjustment ra on rh.RETURN_ID = ra.RETURN_ID
-left join order_header oh on oh.ORDER_ID = ra.ORDER_ID;
+left join (
+  select RETURN_ID, min(ORDER_ID) as ORDER_ID
+  from return_item
+  group by RETURN_ID
+) ro on rh.RETURN_ID = ro.RETURN_ID
+left join order_header oh on oh.ORDER_ID = ro.ORDER_ID
+left join return_adjustment ra on rh.RETURN_ID = ra.RETURN_ID;
+
 ```
 
 ---
@@ -210,24 +223,24 @@ order by ri.ORDER_ID;
 
 ```sql
 select
-s.ORIGIN_FACILITY_ID as FACILITY_ID,
-f.FACILITY_NAME,
-count(distinct s.PRIMARY_ORDER_ID) as TOTAL_ONE_DAY_SHIP_ORDERS,
-concat(
-date_format(curdate() - interval 1 month, '%Y-%m'),
-' Last Month'
-) as REPORTING_PERIOD
+  s.ORIGIN_FACILITY_ID as FACILITY_ID,
+  f.FACILITY_NAME,
+  count(distinct s.PRIMARY_ORDER_ID) as TOTAL_ONE_DAY_SHIP_ORDERS,
+  concat(
+    date_format(curdate() - interval 1 month, '%Y-%m'),
+    ' Last Month'
+  ) as REPORTING_PERIOD
 from shipment s
 join facility f on f.FACILITY_ID = s.ORIGIN_FACILITY_ID
-where timestampdiff(
-day,
-s.ESTIMATED_READY_DATE,
-s.ESTIMATED_SHIP_DATE
-) <= 1
+where timestampdiff(day, s.ESTIMATED_READY_DATE, s.ESTIMATED_SHIP_DATE) <= 1
+  -- Added actual filter for last month:
+  and s.ESTIMATED_SHIP_DATE >= date_format(curdate() - interval 1 month, '%Y-%m-01')
+  and s.ESTIMATED_SHIP_DATE < date_format(curdate(), '%Y-%m-01')
 group by
-s.ORIGIN_FACILITY_ID,
-f.FACILITY_NAME
+  s.ORIGIN_FACILITY_ID,
+  f.FACILITY_NAME
 order by TOTAL_ONE_DAY_SHIP_ORDERS desc;
+
 ```
 
 ---
@@ -246,16 +259,17 @@ order by TOTAL_ONE_DAY_SHIP_ORDERS desc;
 
 ```sql
 SELECT
-    pr.PARTY_ID,
-    CONCAT(p.FIRST_NAME, ' ', p.LAST_NAME) AS NAME,
-    pr.ROLE_TYPE_ID,
-    fp.FACILITY_ID,
-    ps.STATUS_ID AS STATUS
+  pr.PARTY_ID,
+  CONCAT(p.FIRST_NAME, ' ', p.LAST_NAME) AS NAME,
+  pr.ROLE_TYPE_ID,
+  fp.FACILITY_ID,
+  pty.STATUS_ID AS STATUS
 FROM party_role pr
 JOIN person p ON p.PARTY_ID = pr.PARTY_ID
+JOIN party pty ON pty.PARTY_ID = pr.PARTY_ID 
 LEFT JOIN facility_party fp ON fp.PARTY_ID = pr.PARTY_ID
-LEFT JOIN party_status ps ON ps.PARTY_ID = pr.PARTY_ID
 WHERE pr.ROLE_TYPE_ID = 'WAREHOUSE_PICKER';
+
 
 ```
 
@@ -326,28 +340,30 @@ join facility f on f.FACILITY_ID = ii.FACILITY_ID;
 
 ```sql
 select
-oh.ORDER_ID as TRANSFER_ORDER_ID,
-s.ORIGIN_FACILITY_ID as FROM_FACILITY_ID,
-s.DESTINATION_FACILITY_ID as TO_FACILITY_ID,
-oi.PRODUCT_ID,
-oi.QUANTITY as REQUESTED_QUANTITY,
-coalesce(sum(oisgir.QUANTITY), 0) as RESERVED_QUANTITY,
-s.ESTIMATED_SHIP_DATE as TRANSFER_DATE,
-oh.STATUS_ID as STATUS
+  oh.ORDER_ID as TRANSFER_ORDER_ID,
+  s.ORIGIN_FACILITY_ID as FROM_FACILITY_ID,
+  s.DESTINATION_FACILITY_ID as TO_FACILITY_ID,
+  oi.PRODUCT_ID,
+  oi.QUANTITY as REQUESTED_QUANTITY,
+  coalesce(sum(oisgir.QUANTITY), 0) as RESERVED_QUANTITY,
+  s.ESTIMATED_SHIP_DATE as TRANSFER_DATE,
+  oh.STATUS_ID as STATUS
 from order_header oh
 join order_item oi on oi.ORDER_ID = oh.ORDER_ID
 join shipment s on s.PRIMARY_ORDER_ID = oh.ORDER_ID
 left join order_item_ship_grp_inv_res oisgir on oisgir.ORDER_ID = oi.ORDER_ID
-and oisgir.ORDER_ITEM_SEQ_ID = oi.ORDER_ITEM_SEQ_ID
+  and oisgir.ORDER_ITEM_SEQ_ID = oi.ORDER_ITEM_SEQ_ID
+where oh.ORDER_TYPE_ID = 'TRANSFER_ORDER' 
 group by
-oh.ORDER_ID,
-s.ORIGIN_FACILITY_ID,
-s.DESTINATION_FACILITY_ID,
-oi.PRODUCT_ID,
-oi.QUANTITY,
-s.ESTIMATED_SHIP_DATE,
-oh.STATUS_ID
+  oh.ORDER_ID,
+  s.ORIGIN_FACILITY_ID,
+  s.DESTINATION_FACILITY_ID,
+  oi.PRODUCT_ID,
+  oi.QUANTITY,
+  s.ESTIMATED_SHIP_DATE,
+  oh.STATUS_ID
 having RESERVED_QUANTITY = 0;
+
 ```
 
 ---
