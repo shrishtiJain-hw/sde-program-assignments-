@@ -292,9 +292,10 @@ order by TOTAL_ORDERS desc;
 - `THRESHOLD`
 
 ```sql
-select
-PRODUCT_ID,
-MINIMUM_STOCK as THRESHOLD
-from product_facility
-where MINIMUM_STOCK is not null;
+SELECT pf.product_id,
+       pf.minimum_stock as threshold
+FROM product_facility pf
+LEFT JOIN facility f
+ON pf.facility_id = f.facility_id
+WHERE facility_type_id = 'CONFIGURATION';
 ```
